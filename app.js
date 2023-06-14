@@ -4,6 +4,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const cors = require("cors");
 const commonRoutes = require("./routes/commonRoutes");
 const scheduleRoute = require("./routes/scheduleRoute");
+const teacherRoute = require("./routes/teacherRoutes")
 require("dotenv").config();
 
 const mongoString = process.env.DATABASE_URL;
@@ -24,6 +25,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/admin", adminRoutes);
 app.use("/api/schedule", scheduleRoute);
+app.use("/api/teacher", teacherRoute);
 app.use("/api", commonRoutes);
 app.use(express.static("uploads"));
 
