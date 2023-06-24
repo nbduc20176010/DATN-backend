@@ -1,5 +1,7 @@
 const express = require("express");
 const classModel = require("../models/class");
+const scheduleModel = require("../models/schedule");
+const requestModel = require("../models/request");
 
 const jwt = require("jsonwebtoken");
 const employeeModel = require("../models/employee");
@@ -24,6 +26,16 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+teacherRoute.get("/profile", verifyToken, async (req, res) => {
+  if (req.user.role) {
+    const teacherId = req.user.id;
+    const profile = await employeeModel.findById(teacherId);
+    return res.status(200).json(profile);
+  } else {
+    return res.status(401).json({ message: "No permition!" });
+  }
+});
+
 teacherRoute.get("/classes", verifyToken, async (req, res) => {
   if (req.user.role === "teacher") {
     const teacherId = req.user.id;
@@ -33,7 +45,73 @@ teacherRoute.get("/classes", verifyToken, async (req, res) => {
     });
     return res.status(200).json(results);
   } else {
-    return res.status(401).json({ message: "No permisiong!" });
+    return res.status(401).json({ message: "No permition!" });
+  }
+});
+
+//update class
+teacherRoute.put("/class/:id", verifyToken, async (req, res) => {
+  if (req.user.role === "teacher") {
+    const classId = req.params.id;
+    const result = await classModel.findByIdAndUpdate(
+      classId,
+      {
+        $set: {
+          ...req.body,
+        },
+      },
+      { new: true }
+    );
+    res.status(200).json(result);
+  } else {
+    res.status(401).json({ message: "not permited" });
+  }
+});
+
+//get schedule
+teacherRoute.get("/schedule", verifyToken, async (req, res) => {
+  if (req.user.role === "teacher") {
+    const teacherId = req.user.id;
+    const scheduleList = await scheduleModel.find();
+    const teacherSchedule = scheduleList.map((item) => {
+      return {
+        label: item.label,
+        classes: item.classes.filter(
+          (scheduleClass) => scheduleClass.teacherId === teacherId
+        ),
+      };
+    });
+
+    return res.status(200).json(teacherSchedule);
+  } else {
+    res.status(401).json({ message: "not permited" });
+  }
+});
+
+//create request
+teacherRoute.post("/request", verifyToken, async (req, res) => {
+  if (req.user.role === "teacher") {
+    const newRequest = new requestModel({
+      status: "Pending",
+      accountId: req.user.id,
+      ...req.body,
+    });
+    await newRequest.save();
+    return res.status(200).json({ message: "Create request successful!" });
+  } else {
+    res.status(401).json({ message: "not permited" });
+  }
+});
+
+//get list request
+teacherRoute.get("/requests", verifyToken, async (req, res) => {
+  if (req.user.role === "teacher") {
+    const requestList = await requestModel.find({
+      accountId: req.user.id,
+    });
+    return res.status(200).json(requestList);
+  } else {
+    res.status(401).json({ message: "not permited" });
   }
 });
 

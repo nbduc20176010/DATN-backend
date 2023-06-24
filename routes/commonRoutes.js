@@ -3,6 +3,7 @@ const accountModel = require("../models/account");
 const studentModel = require("../models/student");
 const classModel = require("../models/class");
 const roomModel = require("../models/room");
+const employeeModel = require("../models/employee");
 
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -22,7 +23,7 @@ const verifyToken = (req, res, next) => {
       next();
     });
   } else {
-    res.status(401).json({ message: "You are not authorized" });
+    return res.status(401).json({ message: "You are not authorized" });
   }
 };
 
@@ -111,6 +112,26 @@ commonRoutes.get("/room", async (req, res) => {
     }
   } catch (err) {
     res.json(err);
+  }
+});
+
+commonRoutes.get("/profile/employee", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const profile = await employeeModel.findById(userId);
+    return res.json(profile);
+  } catch (error) {
+    res.json(error);
+  }
+});
+
+commonRoutes.get("/profile/student/", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const profile = await studentModel.findById(userId);
+    return res.json(profile);
+  } catch (error) {
+    res.json(error);
   }
 });
 

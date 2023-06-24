@@ -39,7 +39,7 @@ const classSchema = mongoose.Schema(
         },
       },
     ],
-    schedule: [{ day: String, phase: Number, weekDay: String }],
+    schedule: [{ label: String, shift: Number }],
     notes: String,
   },
   {

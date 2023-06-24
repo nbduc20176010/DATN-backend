@@ -3,9 +3,9 @@ const mongoose = require("mongoose");
 const scheduleSchema = mongoose.Schema(
   {
     label: String,
-    shift: Number,
-    class: String,
-    room: String,
+    classes: [
+      { shift: Number, class: String, room: String, teacherId: String },
+    ],
   },
   {
     timestamps: true,

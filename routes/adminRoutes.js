@@ -3,6 +3,8 @@ const employeeModel = require("../models/employee");
 const studentModel = require("../models/student");
 const accountModel = require("../models/account");
 const classModel = require("../models/class");
+const requestModel = require("../models/request");
+const scheduleModel = require("../models/schedule");
 
 const multer = require("multer");
 const jwt = require("jsonwebtoken");
@@ -48,7 +50,7 @@ const verifyToken = (req, res, next) => {
 //get all employees
 adminRoutes.get("/teacher", verifyToken, async (req, res) => {
   if (req.user.role === "admin") {
-    const employees = await employeeModel.find();
+    const employees = await employeeModel.find({ role: "teacher" });
     return res.status(200).json(employees);
   } else {
     return res.status(401).json({ message: "not permited" });
@@ -228,9 +230,9 @@ adminRoutes.delete("/student/:id", verifyToken, async (req, res) => {
 adminRoutes.get("/class", verifyToken, async (req, res) => {
   if (req.user.role === "admin") {
     const classes = await classModel.find();
-    res.status(200).json(classes);
+    return res.status(200).json(classes);
   } else {
-    res.json({ message: "not permited" });
+    return res.json({ message: "not permited" });
   }
 });
 
@@ -243,11 +245,11 @@ adminRoutes.post("/class", verifyToken, async (req, res) => {
         numberOfStudent: 0,
       });
       const newClass = await result.save();
-      res.status(200).json(newClass);
+      return res.status(200).json(newClass);
     }
-    res.status({ message: "Class already existed!" });
+    return res.json({ message: "Class already existed!" });
   } else {
-    res.json({ message: "not permited" });
+    return res.json({ message: "not permited" });
   }
 });
 
@@ -264,9 +266,9 @@ adminRoutes.put("/class/:id", verifyToken, async (req, res) => {
       },
       { new: true }
     );
-    res.send(result);
+    return res.send(result);
   } else {
-    res.json({ message: "not permited" });
+    return res.json({ message: "not permited" });
   }
 });
 
@@ -275,9 +277,116 @@ adminRoutes.delete("/class/:id", verifyToken, async (req, res) => {
   if (req.user.role === "admin") {
     const classId = req.params.id;
     const result = await classModel.findByIdAndDelete(classId);
-    res.send(result._id);
+    return res.send(result._id);
   } else {
-    res.json({ message: "not permited" });
+    return res.json({ message: "not permited" });
+  }
+});
+
+//fetch requests
+adminRoutes.get("/requests/:status", verifyToken, async (req, res) => {
+  if (req.user.role === "admin") {
+    const status = req.params.status;
+    const results =
+      status === "All"
+        ? await requestModel.find()
+        : await requestModel.find({
+            status: status,
+          });
+    return res.json(results);
+  } else {
+    return res.status(401).json({ message: "not permited" });
+  }
+});
+
+//fetch number of pending requests
+adminRoutes.post("/requests/pending", verifyToken, async (req, res) => {
+  if (req.user.role === "admin") {
+    const pendingRequests = await requestModel.find({ status: "Pending" });
+    return res.status(200).json({ numberOfRequests: pendingRequests.length });
+  } else {
+    return res.status(401).json({ message: "not permited" });
+  }
+});
+
+//approval api
+//delete student from class
+adminRoutes.put("/approval/class/:id", verifyToken, async (req, res) => {
+  if (req.user.role === "admin") {
+    const requestId = req.params.id;
+    const { studentId, classId } = req.body;
+    const pendingRequest = await requestModel.findById(requestId);
+    const studentClass = await classModel.findById(classId);
+    const newStudentList = studentClass.students.filter(
+      (item) => item._id !== studentId
+    );
+    studentClass.students = newStudentList;
+    pendingRequest.status = "Approved";
+    await pendingRequest.save();
+    await studentClass.save();
+    return res.send({ message: "Request approved!", request: pendingRequest });
+  } else {
+    return res.json({ message: "not permited" });
+  }
+});
+
+//delete class from schedule
+adminRoutes.put("/approval/schedule/:id", verifyToken, async (req, res) => {
+  if (req.user.role === "admin") {
+    const requestId = req.params.id;
+    const { classId, ...schedule } = req.body;
+    const pendingRequest = await requestModel.findById(requestId);
+    const classSchedule = await scheduleModel.findOne({
+      label: schedule.label,
+    });
+    const newClassesList = classSchedule.classes.filter(
+      (item) => item._id.toString() !== classId
+    );
+    console.log(newClassesList);
+    console.log(classSchedule);
+    classSchedule.classes = newClassesList;
+    pendingRequest.status = "Approved";
+    await pendingRequest.save();
+    await classSchedule.save();
+    return res.send({ message: "Request approved!", request: pendingRequest });
+  } else {
+    return res.json({ message: "not permited" });
+  }
+});
+
+//update profile
+adminRoutes.put("/approval/employee/:id", verifyToken, async (req, res) => {
+  if (req.user.role === "admin") {
+    const requestId = req.params.id;
+    const { _id, ...updateTeacher } = req.body;
+    const pendingRequest = await requestModel.findById(requestId);
+    await employeeModel.findByIdAndUpdate(
+      _id,
+      {
+        $set: {
+          ...updateTeacher,
+        },
+      },
+      { new: true }
+    );
+    pendingRequest.status = "Approved";
+    await pendingRequest.save();
+    return res.send({ message: "Request approved!", request: pendingRequest });
+  } else {
+    return res.json({ message: "not permited" });
+  }
+});
+
+//decline request
+adminRoutes.put("/decline/:id", verifyToken, async (req, res) => {
+  if (req.user.role === "admin") {
+    const requestId = req.params.id;
+    const pendingRequest = await requestModel.findById(requestId);
+    pendingRequest.status = "Declined";
+    await pendingRequest.save();
+    return res.send({ message: "Request declined!", request: pendingRequest });
+  } else {
+    return res.json({ message: "not permited" });
   }
 });
 
