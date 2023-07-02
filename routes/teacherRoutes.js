@@ -115,4 +115,22 @@ teacherRoute.get("/requests", verifyToken, async (req, res) => {
   }
 });
 
+teacherRoute.put("/attendance/:id", verifyToken, async (req, res) => {
+  if (req.user.role === "teacher") {
+    const classId = req.params.id;
+    const classDetail = await classModel.findByIdAndUpdate(
+      classId,
+      {
+        $set: {
+          student: req.students,
+        },
+      },
+      { new: true }
+    );
+    return res.status(200).json(classDetail);
+  } else {
+    res.status(401).json({ message: "not permited" });
+  }
+});
+
 module.exports = teacherRoute;

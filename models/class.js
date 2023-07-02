@@ -33,6 +33,21 @@ const classSchema = mongoose.Schema(
         fullName: String,
         phoneNumber: String,
         email: String,
+        absent: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+        midScore: {
+          type: Number,
+          min: 0,
+          max: 100,
+        },
+        finalScore: {
+          type: Number,
+          min: 0,
+          max: 100,
+        },
         image: {
           data: String,
           contentType: String,

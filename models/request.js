@@ -13,6 +13,11 @@ const requestModel = mongoose.Schema({
     require: true,
     type: String,
   },
+  requestFrom: {
+    require: true,
+    type: String,
+    enum: ["teacher", "regular"],
+  },
   sendBy: {
     require: true,
     type: String,
@@ -20,7 +25,7 @@ const requestModel = mongoose.Schema({
   category: {
     require: true,
     type: String,
-    enum: ["schedule", "employee", "class"],
+    enum: ["schedule", "employee", "class", "student"],
   },
   status: {
     type: String,

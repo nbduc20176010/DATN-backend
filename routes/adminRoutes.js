@@ -354,7 +354,7 @@ adminRoutes.put("/approval/schedule/:id", verifyToken, async (req, res) => {
   }
 });
 
-//update profile
+//update profile teacher
 adminRoutes.put("/approval/employee/:id", verifyToken, async (req, res) => {
   if (req.user.role === "admin") {
     const requestId = req.params.id;
@@ -377,6 +377,29 @@ adminRoutes.put("/approval/employee/:id", verifyToken, async (req, res) => {
   }
 });
 
+//update profile student
+adminRoutes.put("/approval/student/:id", verifyToken, async (req, res) => {
+  if (req.user.role === "admin") {
+    const requestId = req.params.id;
+    const { _id, ...updateStudent } = req.body;
+    const pendingRequest = await requestModel.findById(requestId);
+    await studentModel.findByIdAndUpdate(
+      _id,
+      {
+        $set: {
+          ...updateStudent,
+        },
+      },
+      { new: true }
+    );
+    pendingRequest.status = "Approved";
+    await pendingRequest.save();
+    return res.send({ message: "Request approved!", request: pendingRequest });
+  } else {
+    return res.json({ message: "not permited" });
+  }
+});
+
 //decline request
 adminRoutes.put("/decline/:id", verifyToken, async (req, res) => {
   if (req.user.role === "admin") {
@@ -385,6 +408,23 @@ adminRoutes.put("/decline/:id", verifyToken, async (req, res) => {
     pendingRequest.status = "Declined";
     await pendingRequest.save();
     return res.send({ message: "Request declined!", request: pendingRequest });
+  } else {
+    return res.json({ message: "not permited" });
+  }
+});
+
+adminRoutes.put("/class/score/:id", verifyToken, async (req, res) => {
+  if (req.user.role === "admin") {
+    const { _id, midScore, finalScore } = req.body;
+    const classId = req.params.id;
+    const classDetail = await classModel.findById(classId);
+    const studentIndex = classDetail.students.findIndex(
+      (item) => item._id === _id
+    );
+    classDetail.students[studentIndex].midScore = midScore;
+    classDetail.students[studentIndex].finalScore = finalScore;
+    await classDetail.save()
+    return res.status(200).send(classDetail);
   } else {
     return res.json({ message: "not permited" });
   }

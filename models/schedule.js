@@ -4,7 +4,13 @@ const scheduleSchema = mongoose.Schema(
   {
     label: String,
     classes: [
-      { shift: Number, class: String, room: String, teacherId: String },
+      {
+        shift: Number,
+        classId: String,
+        class: String,
+        room: String,
+        teacherId: String,
+      },
     ],
   },
   {
